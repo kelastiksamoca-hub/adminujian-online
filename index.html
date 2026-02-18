@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Sistem Ujian Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(to bottom, #2d8a45 0%, #1a5d2c 100%); min-height: 100vh; }
+        .main-container { background-color: #dcf1e4; border-radius: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header-blue { background-color: #7d89e5; }
+        .btn-simpan { background: linear-gradient(135deg, #8b76e1 0%, #7a65d0 100%); color: white; padding: 10px 30px; border-radius: 15px; font-weight: bold; }
+        .btn-refresh { background-color: #5cb85c; color: white; border-radius: 12px; }
+        .btn-hapus-merah { background-color: #ff4d4d; color: white; border-radius: 12px; }
+        .sidebar-item.active { background-color: rgba(255, 255, 255, 0.2); border-left: 4px solid white; }
+        .pulse { animation: pulse-animation 2s infinite; }
+        @keyframes pulse-animation { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        /* Modal Styles */
+        #custom-modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-active .modal-content { transform: scale(1); }
+        
+        /* Toast Notification */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        .toast { animation: slideIn 0.3s ease forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .btn-aktifkan { background-color: #5cb85c; color: white; border-radius: 20px; font-size: 12px; padding: 4px 12px; transition: all 0.2s; }
+        .btn-nonaktifkan { background-color: #1a33ff; color: white; border-radius: 20px; font-size: 12px; padding: 4px 12px; transition: all 0.2s; }
+        .btn-hapus-tabel { background-color: #ff4d4d; color: white; border-radius: 20px; font-size: 12px; padding: 4px 12px; }
+        .btn-loading { opacity: 0.6; cursor: not-allowed; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Custom Modal Structure -->
+    <div id="custom-modal-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden flex items-center justify-center p-4">
+        <div class="modal-content bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+            <div class="p-8 text-center">
+                <div id="modal-icon-container" class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-2">Konfirmasi</h3>
+                <p id="modal-message" class="text-gray-500 mb-8">Apakah Anda yakin ingin melakukan aksi ini?</p>
+                <div class="flex gap-3">
+                    <button id="modal-cancel-btn" class="flex-1 py-3 px-6 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition">Batal</button>
+                    <button id="modal-confirm-btn" class="flex-1 py-3 px-6 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition shadow-lg shadow-red-200">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <div class="flex flex-col md:flex-row gap-6 max-w-7xl mx-auto">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 text-white p-4">
+            <div class="flex items-center space-x-3 mb-10">
+                <div class="bg-white p-2 rounded-lg text-green-700"><i data-lucide="layout-dashboard" class="w-6 h-6"></i></div>
+                <span class="font-bold text-xl">Exam Admin</span>
+            </div>
+            <nav class="space-y-2">
+                <button onclick="switchTab('dashboard')" class="sidebar-item active flex items-center space-x-3 w-full p-3 rounded-xl transition">
+                    <i data-lucide="home" class="w-5 h-5"></i><span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('tambah-soal')" class="sidebar-item flex items-center space-x-3 w-full p-3 rounded-xl transition">
+                    <i data-lucide="plus-square" class="w-5 h-5"></i><span>Tambah Soal</span>
+                </button>
+                <button onclick="switchTab('daftar-soal')" class="sidebar-item flex items-center space-x-3 w-full p-3 rounded-xl transition">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i><span>Daftar Soal</span>
+                </button>
+                <button onclick="switchTab('monitoring')" class="sidebar-item flex items-center space-x-3 w-full p-3 rounded-xl transition">
+                    <i data-lucide="monitor" class="w-5 h-5"></i><span>Monitoring</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- Dashboard -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+                <div class="main-container p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2 mb-6">🏠 Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative">
+                            <p class="text-gray-500 font-medium">Token Saat Ini</p>
+                            <h3 id="display-token" class="text-4xl font-black text-indigo-600">----</h3>
+                            <div class="mt-4 flex gap-2">
+                                <button onclick="generateAndReplaceToken()" class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1.5 rounded-lg font-bold">Ganti</button>
+                                <button id="btn-hapus-token" class="text-[10px] bg-red-100 text-red-700 px-2 py-1.5 rounded-lg font-bold">Hapus</button>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                            <p class="text-gray-500 font-medium">Total Siswa Ujian</p>
+                            <h3 id="total-siswa-ujian" class="text-4xl font-black text-green-600">0</h3>
+                            <p class="text-[10px] text-gray-400 mt-2 font-medium">Siswa terdeteksi aktif</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                            <p class="text-gray-500 font-medium">Total Soal</p>
+                            <h3 id="total-soal" class="text-4xl font-black text-gray-800">0</h3>
+                            <p class="text-[10px] text-gray-400 mt-2 font-medium">Tersimpan di database</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                            <p class="text-gray-500 font-medium">Jam Server</p>
+                            <h3 id="clock" class="text-3xl font-black text-gray-800">00:00:00</h3>
+                            <p class="text-[10px] text-gray-400 mt-2 font-medium">Waktu lokal Indonesia</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tambah Soal -->
+            <div id="tab-tambah-soal" class="tab-content hidden">
+                <div class="main-container p-10">
+                    <div class="flex items-center space-x-3 mb-8">
+                        <i data-lucide="plus" class="w-6 h-6 font-bold text-gray-800"></i>
+                        <h2 class="text-xl font-bold text-gray-800">Tambah Soal Baru</h2>
+                    </div>
+                    <form id="form-tambah-soal" class="space-y-4">
+                        <select id="soal-jenis" class="w-full bg-white p-4 rounded-2xl border-none shadow-sm outline-none cursor-pointer" required>
+                            <option value="" disabled selected>Pilih Jenis Ujian</option>
+                            <option value="TO">Try Out (TO)</option>
+                            <option value="UAS">UAS / PAS</option>
+                        </select>
+                        <select id="soal-mapel" class="w-full bg-white p-4 rounded-2xl border-none shadow-sm outline-none cursor-pointer" required>
+                            <option value="" disabled selected>Pilih Mapel</option>
+                            <option value="Pendidikan Agama">Pendidikan Agama</option>
+                            <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+                            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                            <option value="Matematika">Matematika</option>
+                            <option value="IPAS">IPAS</option>
+                            <option value="Seni Musik">Seni Musik</option>
+                            <option value="Seni Tari">Seni Tari</option>
+                            <option value="Seni Rupa">Seni Rupa</option>
+                            <option value="Bahasa Inggris">Bahasa Inggris</option>
+                            <option value="Bahasa Sunda">Bahasa Sunda</option>
+                            <option value="PJOK">PJOK</option>
+                            <option value="Informatika">Informatika</option>
+                        </select>
+                        <select id="soal-durasi" class="w-full bg-white p-4 rounded-2xl border-none shadow-sm outline-none cursor-pointer" required>
+                            <option value="" disabled selected>Durasi (Menit)</option>
+                            <option value="30">30 Menit</option>
+                            <option value="45">45 Menit</option>
+                            <option value="60">60 Menit</option>
+                            <option value="90">90 Menit</option>
+                            <option value="120">120 Menit</option>
+                            <option value="150">150 Menit</option>
+                        </select>
+                        <input type="url" id="soal-link" placeholder="https://docs.google.com/forms/..." class="w-full bg-white p-4 rounded-2xl border-none shadow-sm outline-none" required>
+                        <button type="submit" id="btn-submit-soal" class="btn-simpan w-full md:w-auto shadow-md">Simpan Soal</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Daftar Soal -->
+            <div id="tab-daftar-soal" class="tab-content hidden">
+                <div class="main-container p-10">
+                    <div class="flex items-center space-x-3 mb-8">
+                        <i data-lucide="list" class="w-6 h-6 font-bold text-gray-800"></i>
+                        <h2 class="text-xl font-bold text-gray-800">Daftar Soal</h2>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl shadow-sm bg-white min-h-[150px]">
+                        <table class="w-full text-center border-collapse">
+                            <thead>
+                                <tr class="header-blue text-white">
+                                    <th class="py-4 px-4">No</th>
+                                    <th class="py-4 px-4 text-left">Mapel</th>
+                                    <th class="py-4 px-4">Durasi</th>
+                                    <th class="py-4 px-4">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="soalTableBody" class="divide-y divide-gray-100">
+                                <tr><td colspan="4" class="py-10 text-gray-400 italic">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitoring -->
+            <div id="tab-monitoring" class="tab-content hidden">
+                <div class="main-container p-10">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i data-lucide="radio" class="w-5 h-5 text-green-600"></i> Monitoring Siswa</h2>
+                            <p class="text-[10px] text-green-700 font-bold flex items-center gap-1 mt-1 pulse">
+                                <span class="w-2 h-2 bg-green-500 rounded-full"></span> Auto Refresh Aktif (5s)
+                            </p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="loadMonitoring()" class="btn-refresh px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-sm">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+                            </button>
+                            <button onclick="hapusSelesai()" class="btn-hapus-merah px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-sm">
+                                <i data-lucide="user-minus" class="w-4 h-4"></i> Hapus Selesai
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl shadow-sm bg-white min-h-[300px]">
+                        <table class="w-full text-center border-collapse">
+                            <thead>
+                                <tr class="header-blue text-white">
+                                    <th class="py-4 px-2">No</th>
+                                    <th class="py-4 px-4">Username</th>
+                                    <th class="py-4 px-4">Nama Siswa</th>
+                                    <th class="py-4 px-2">Status</th>
+                                    <th class="py-4 px-2">Last Active</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monitoringTable" class="divide-y divide-gray-100 text-sm">
+                                <tr><td colspan="5" class="py-10 text-gray-400 italic">Menghubungkan ke server...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const MAIN_URL = "https://script.google.com/macros/s/AKfycbyRju3DxP4m2ctBGST9mIpHelk5jdkXxp3ASGqaMFTptfnLkPtYc4qcFKzHEQ5_mtlWlA/exec";
+        const MONITOR_URL = "https://script.google.com/macros/s/AKfycbxi0j1GF9NlJ4bLrVmdMpQjfhf8oSdpiss7rq59qzuOiL848O4hZwcDFBk37Yy9v8FH/exec";
+
+        let currentTab = 'dashboard';
+        let currentTokenId = null;
+        let localSoalCache = [];
+
+        // --- CUSTOM UI HELPERS ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 mb-3`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i> <span class="font-bold text-sm">${message}</span>`;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showConfirm(title, message, confirmText = "Hapus", isWarning = true) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('custom-modal-overlay');
+                const titleEl = document.getElementById('modal-title');
+                const msgEl = document.getElementById('modal-message');
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                const cancelBtn = document.getElementById('modal-cancel-btn');
+                const iconContainer = document.getElementById('modal-icon-container');
+
+                titleEl.innerText = title;
+                msgEl.innerText = message;
+                confirmBtn.innerText = confirmText;
+
+                if (isWarning) {
+                    confirmBtn.className = "flex-1 py-3 px-6 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition shadow-lg shadow-red-200";
+                    iconContainer.className = "w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4";
+                    iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-8 h-8"></i>';
+                } else {
+                    confirmBtn.className = "flex-1 py-3 px-6 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-2xl transition shadow-lg shadow-indigo-200";
+                    iconContainer.className = "w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4";
+                    iconContainer.innerHTML = '<i data-lucide="info" class="w-8 h-8"></i>';
+                }
+
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('modal-active'), 10);
+                lucide.createIcons();
+
+                const cleanup = (val) => {
+                    overlay.classList.remove('modal-active');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                    resolve(val);
+                };
+
+                confirmBtn.onclick = () => cleanup(true);
+                cancelBtn.onclick = () => cleanup(false);
+            });
+        }
+
+        // --- DASHBOARD & TOKEN ---
+        async function initData() {
+            try {
+                const res = await fetch(`${MAIN_URL}?role=admin`);
+                const data = await res.json();
+                if(data.status === "OK") {
+                    if (data.token && data.token.length > 0) {
+                        currentTokenId = data.token[0][0];
+                        document.getElementById('display-token').innerText = data.token[0][1];
+                        document.getElementById('btn-hapus-token').onclick = () => hapusToken(currentTokenId);
+                    } else {
+                        currentTokenId = null;
+                        document.getElementById('display-token').innerText = "----";
+                    }
+                    
+                    document.getElementById('total-soal').innerText = data.soal ? data.soal.length : 0;
+                    localSoalCache = data.soal || [];
+                    updateSoalUI(localSoalCache);
+                }
+                // Sekaligus update jumlah siswa di dashboard
+                await updateSiswaCount();
+            } catch (e) { console.error(e); }
+        }
+
+        async function updateSiswaCount() {
+             try {
+                const res = await fetch(MONITOR_URL);
+                const data = await res.json();
+                const totalSiswa = (data && data.length > 1) ? data.length - 1 : 0;
+                document.getElementById('total-siswa-ujian').innerText = totalSiswa;
+            } catch (err) { console.log("Gagal update count siswa"); }
+        }
+
+        async function hapusToken(id) {
+            const confirmed = await showConfirm("Hapus Token?", "Siswa tidak akan bisa masuk menggunakan token ini lagi.");
+            if(confirmed) {
+                try {
+                    await fetch(MAIN_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "DELETE_TOKEN", id: id })
+                    });
+                    showToast("Token berhasil dihapus");
+                    initData();
+                } catch (err) {
+                    showToast("Gagal menghapus token", "error");
+                }
+            }
+        }
+
+        async function generateAndReplaceToken() {
+            const newToken = Math.random().toString(36).substring(2, 7).toUpperCase();
+            const confirmed = await showConfirm("Ganti Token?", `Token baru: ${newToken}. Ganti sekarang?`, "Ganti", false);
+            if(!confirmed) return;
+            
+            await fetch(MAIN_URL, { method: "POST", body: JSON.stringify({ action: "ADD_TOKEN", token: newToken }) });
+            showToast("Token baru diaktifkan");
+            initData();
+        }
+
+        // --- MANAJEMEN SOAL ---
+        document.getElementById('form-tambah-soal').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-soal');
+            const originalText = btn.innerText;
+            btn.innerText = "Menyimpan...";
+            btn.disabled = true;
+
+            const payload = {
+                action: "ADD_SOAL",
+                jenis: document.getElementById('soal-jenis').value,
+                mapel: document.getElementById('soal-mapel').value,
+                durasi: document.getElementById('soal-durasi').value,
+                link: document.getElementById('soal-link').value
+            };
+
+            try {
+                const res = await fetch(MAIN_URL, { method: "POST", body: JSON.stringify(payload) });
+                const result = await res.json();
+                if(result.status === "SOAL_ADDED") {
+                    showToast("Soal berhasil disimpan");
+                    document.getElementById('form-tambah-soal').reset();
+                    switchTab('daftar-soal');
+                }
+            } catch (err) { showToast("Gagal menambah soal", "error"); } 
+            finally { btn.innerText = originalText; btn.disabled = false; }
+        };
+
+        function updateSoalUI(soalList) {
+            const tbody = document.getElementById('soalTableBody');
+            tbody.innerHTML = "";
+            if(!soalList || soalList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-10 text-gray-400">Data soal kosong.</td></tr>';
+                return;
+            }
+            soalList.forEach((row, index) => {
+                const id = row[0];
+                const status = parseInt(row[5]);
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="py-4 text-xs text-gray-400">${index + 1}</td>
+                        <td class="py-4 font-medium text-left px-4">
+                            <div class="text-sm text-gray-800">${row[2]}</div>
+                            <div class="text-xs text-indigo-500 font-bold uppercase">${row[1]}</div>
+                        </td>
+                        <td class="py-4 text-sm font-bold text-gray-600">${row[3]}m</td>
+                        <td class="py-4 flex justify-center gap-2">
+                            ${status === 1 
+                                ? `<button id="btn-toggle-${id}" onclick="toggleSoal('${id}', 0)" class="btn-nonaktifkan shadow-sm">Nonaktif</button>`
+                                : `<button id="btn-toggle-${id}" onclick="toggleSoal('${id}', 1)" class="btn-aktifkan shadow-sm">Aktifkan</button>`
+                            }
+                            <button onclick="deleteSoal('${id}')" class="btn-hapus-tabel shadow-sm">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function toggleSoal(id, status) {
+            const btn = document.getElementById(`btn-toggle-${id}`);
+            btn.innerText = "Proses...";
+            btn.classList.add('btn-loading');
+
+            const idx = localSoalCache.findIndex(s => s[0] == id);
+            if (idx !== -1) localSoalCache[idx][5] = status;
+            updateSoalUI(localSoalCache);
+
+            try {
+                await fetch(MAIN_URL, { 
+                    method: "POST", 
+                    body: JSON.stringify({ action: "TOGGLE_SOAL", id: id, status: status }) 
+                });
+                showToast(`Soal ${status === 1 ? 'diaktifkan' : 'dinonaktifkan'}`);
+                initData(); 
+            } catch (err) { 
+                showToast("Koneksi gagal", "error");
+                initData(); 
+            }
+        }
+
+        async function deleteSoal(id) {
+            const confirmed = await showConfirm("Hapus Soal?", "Aksi ini akan menghapus soal secara permanen dari daftar.");
+            if(!confirmed) return;
+            try {
+                await fetch(MAIN_URL, { method: "POST", body: JSON.stringify({ action: "DELETE_SOAL", id: id }) });
+                showToast("Soal berhasil dihapus");
+                initData();
+            } catch (err) { showToast("Gagal menghapus soal", "error"); }
+        }
+
+        // --- MONITORING ---
+        async function loadMonitoring() {
+            try {
+                const res = await fetch(MONITOR_URL);
+                const data = await res.json();
+                
+                // Update counter dashboard juga saat monitoring di-refresh
+                const totalSiswa = (data && data.length > 1) ? data.length - 1 : 0;
+                document.getElementById('total-siswa-ujian').innerText = totalSiswa;
+
+                const tbody = document.getElementById("monitoringTable");
+                tbody.innerHTML = "";
+
+                if (!data || data.length <= 1) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-gray-500 italic">Belum ada siswa aktif</td></tr>`;
+                    return;
+                }
+
+                data.slice(1).forEach((row, index) => {
+                    const waktu = new Date(row[3]);
+                    const jam = isNaN(waktu) ? "-" : waktu.toLocaleString("id-ID");
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-green-50 transition-colors">
+                            <td class="py-4 text-gray-400 text-xs">${index + 1}</td>
+                            <td class="py-4 font-mono text-gray-600 px-4">${row[0] || "-"}</td>
+                            <td class="py-4 text-left font-semibold text-gray-700 px-4">${row[1] || "-"}</td>
+                            <td class="py-4">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusClass(row[2])}">
+                                    ${row[2] || "-"}
+                                </span>
+                            </td>
+                            <td class="py-4 text-gray-500 text-xs">${jam}</td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { console.log("Monitoring error:", err); }
+        }
+
+        async function hapusSelesai() {
+            const confirmed = await showConfirm("Hapus Monitoring?", "Semua data siswa yang sudah 'Selesai' akan dihapus dari daftar monitoring.");
+            if(!confirmed) return;
+            
+            const formData = new FormData();
+            formData.append("action", "DELETE_SELESAI");
+            await fetch(MONITOR_URL, { method: "POST", body: formData });
+            showToast("Monitoring dibersihkan");
+            loadMonitoring();
+        }
+
+        function getStatusClass(s) {
+            const status = s ? s.toLowerCase() : "";
+            if (status.includes('selesai')) return 'bg-blue-100 text-blue-700';
+            if (status.includes('kerja') || status.includes('aktif')) return 'bg-green-100 text-green-700';
+            return 'bg-yellow-100 text-yellow-700';
+        }
+
+        // --- CORE UI ---
+        function switchTab(id) {
+            currentTab = id;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + id).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('active'));
+            const buttons = document.querySelectorAll('.sidebar-item');
+            buttons.forEach(b => { if(b.getAttribute('onclick').includes(`'${id}'`)) b.classList.add('active'); });
+
+            if(id === 'monitoring') loadMonitoring();
+            else initData();
+            lucide.createIcons();
+        }
+
+        setInterval(() => {
+            if (currentTab === "monitoring") loadMonitoring();
+            else updateSiswaCount(); // Tetap update count meski di tab dashboard
+        }, 5000);
+
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID');
+        }, 1000);
+
+        initData();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
