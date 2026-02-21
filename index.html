@@ -267,14 +267,19 @@
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mata Pelajaran</label>
                                     <select id="jadwal-mapel" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-700 appearance-none" required>
-                                        <option value="">Pilih Mapel...</option>
+                                        <option value="" disabled selected>Pilih Mapel</option>
+                                        <option value="Pendidikan Agama">Pendidikan Agama</option>
+                                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
                                         <option value="Bahasa Indonesia">Bahasa Indonesia</option>
                                         <option value="Matematika">Matematika</option>
                                         <option value="IPAS">IPAS</option>
+                                        <option value="Seni Musik">Seni Musik</option>
+                                        <option value="Seni Tari">Seni Tari</option>
+                                        <option value="Seni Rupa">Seni Rupa</option>
                                         <option value="Bahasa Inggris">Bahasa Inggris</option>
-                                        <option value="Pendidikan Agama">Pendidikan Agama</option>
-                                        <option value="Seni Budaya">Seni Budaya</option>
+                                        <option value="Bahasa Sunda">Bahasa Sunda</option>
                                         <option value="PJOK">PJOK</option>
+                                        <option value="Informatika">Informatika</option>
                                     </select>
                                 </div>
                                 <div class="space-y-2">
@@ -331,21 +336,27 @@
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kategori Ujian</label>
                                     <select id="soal-jenis" class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-700" required>
-                                        <option value="Formatif">Formatif</option>
-                                        <option value="Sumatif">Sumatif</option>
-                                        <option value="Simulasi">Simulasi</option>
+                                        <option value="" disabled selected>Pilih Jenis Ujian</option>
+                                        <option value="TO">Try Out (TO)</option>
+                                        <option value="UAS">UAS / PAS</option>
                                     </select>
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mata Pelajaran</label>
                                     <select id="soal-mapel" class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-700" required>
+                                        <option value="" disabled selected>Pilih Mapel</option>
+                                        <option value="Pendidikan Agama">Pendidikan Agama</option>
+                                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
                                         <option value="Bahasa Indonesia">Bahasa Indonesia</option>
                                         <option value="Matematika">Matematika</option>
                                         <option value="IPAS">IPAS</option>
+                                        <option value="Seni Musik">Seni Musik</option>
+                                        <option value="Seni Tari">Seni Tari</option>
+                                        <option value="Seni Rupa">Seni Rupa</option>
                                         <option value="Bahasa Inggris">Bahasa Inggris</option>
-                                        <option value="Pendidikan Agama">Pendidikan Agama</option>
-                                        <option value="Seni Budaya">Seni Budaya</option>
+                                        <option value="Bahasa Sunda">Bahasa Sunda</option>
                                         <option value="PJOK">PJOK</option>
+                                        <option value="Informatika">Informatika</option>
                                     </select>
                                 </div>
                             </div>
@@ -444,7 +455,7 @@
     </div>
 
     <script>
-        const MAIN_URL = "https://script.google.com/macros/s/AKfycbzrBdQ8QviiOLQWEEAXBmf7Zc_1znAIb6BszwC_H3Kc6CX3xpRjU5X3YMLV8c4jBGyR/exec";
+        const MAIN_URL = "https://script.google.com/macros/s/AKfycbw2UM8tOy6RLEqoNiTT4-TT1BprSjNOANMVTuFsgcEdHkC9uFgpyRsutu-YaDLqXIBZgQ/exec";
         const MONITOR_URL = "https://script.google.com/macros/s/AKfycbxi0j1GF9NlJ4bLrVmdMpQjfhf8oSdpiss7rq59qzuOiL848O4hZwcDFBk37Yy9v8FH/exec";
        
         let currentKelasFilter = "ALL";
